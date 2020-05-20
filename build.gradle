@@ -1,0 +1,37 @@
+plugins {
+    id 'scala'
+    id 'java'
+}
+
+group 'nl.tudelft.ewi.abs.nonnenmacher'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.scala-lang:scala-library:$scalaVersion"
+    compile "org.scala-lang:scala-reflect:$scalaVersion"
+    compile "org.scala-lang:scala-compiler:$scalaVersion"
+
+    compile "org.apache.spark:spark-sql_2.12:$sparkVersion"
+    compile "org.apache.spark:spark-catalyst_2.12:$sparkVersion"
+    compile "org.apache.spark:spark-core_2.12:$sparkVersion"
+    compile "org.apache.spark:spark-mllib_2.12:$sparkVersion"
+
+    // gandiva includes system sepcific libraries and cannot be loaded therefore from Maven
+    compile files("libs/arrow-gandiva-0.17.0.jar")
+
+    // transitive dependencies of arrow-gandiva https://mvnrepository.com/artifact/org.apache.arrow.gandiva/arrow-gandiva/0.17.0
+    compile "com.google.guava:guava:23.0"
+    compile "com.google.protobuf:protobuf-java:2.5.0"
+    compile "org.apache.arrow:arrow-memory:0.17.0"
+    compile "org.apache.arrow:arrow-vector:0.17.0"
+    compile "org.slf4j:slf4j-api:1.7.25"
+
+    //TEST
+    testCompile 'org.scalatest:scalatest_2.12:3.0.1'
+    //USE JUnit 4 instead because scalatest is not compatible with jUni5
+    testImplementation "junit:junit:$jUnitVersion"
+}
