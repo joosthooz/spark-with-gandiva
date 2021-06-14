@@ -35,3 +35,8 @@ dependencies {
     //USE JUnit 4 instead because scalatest is not compatible with jUni5
     testImplementation "junit:junit:$jUnitVersion"
 }
+
+test {
+	minHeapSize = "128M"
+	maxHeapSize = "32G"
+}

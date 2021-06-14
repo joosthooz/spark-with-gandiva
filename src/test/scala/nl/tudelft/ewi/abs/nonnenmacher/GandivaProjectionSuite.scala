@@ -13,7 +13,7 @@ class GandivaProjectionSuite extends FunSuite with SparkSessionBuilder{
 
   override def withExtensions: Seq[SparkSessionExtensions => Unit] = Seq(ProjectionOnGandivaExtension(), ArrowColumnarExtension())
 
-  test("that a simple addition query can be executed on Gandiva") {
+  ignore("that a simple addition query can be executed on Gandiva") {
 
     // Deactivates whole stage codegen, helpful for debugging
     // spark.conf.set("spark.sql.codegen.wholeStage", false)
@@ -32,7 +32,7 @@ class GandivaProjectionSuite extends FunSuite with SparkSessionBuilder{
       .repartition(2) // Enforces a separate Projection step
     // otherwise Spark optimizes the projection and combines it with the data generation
 
-    val res = df.select((col("a") + col("b") + col("c") * col("d")) * 4).where(col("a") < 100)
+    val res = df.select(col("a") + col("b") + col("c"))//.where(col("a") < 100)
 
     println("Logical Plan:")
     println(res.queryExecution.optimizedPlan)
@@ -47,22 +47,45 @@ class GandivaProjectionSuite extends FunSuite with SparkSessionBuilder{
 
     //Verify the expected results are correct
     val results: Array[Int] = res.collect().map(_.getInt(0));
-    assert(results.length == 6)
+//    assert(results.length == 6)
     println("Result: " + results.toSet)
-    assert(Set(12, 32, 60, 96, 140, 192).subsetOf(results.toSet))
+//    assert(Set(12, 32, 60, 96, 140, 192).subsetOf(results.toSet))
   }
 
-  test("that also a processing of multiple batches (1 million rows) works") {
+  test("Add 3 columns, Gandiva") {
 
     import spark.implicits._
 
-    val df = spark.range(1e6.toLong).rdd.map(x => (x, (1e6 - x).toLong, x * 2))
-      .toDF("a", "b", "c")
-      .select(col("a") * col("b"), col("b") + col("c"), col("c") * 2)
+    var totalextimes = 0.0
+	var lastextime = 0.0
+    var i=0
+    val nIters = 4
+    for (i <- 0 to nIters - 1)  {
+	    val tc1 = System.nanoTime()
+//        val dfin = spark.range(5 * 1e6.toLong).rdd.map(x => (x + 1.0, 5 * 1e6 - x, x / 2)).toDF("a", "b", "c")
+        val dfin = spark.range(5 * 1e6.toLong).rdd.map(x => (1, 2, 3)).toDF("a", "b", "c")
+	    val tc2 = System.nanoTime()
+	    println("Input creation time: " + (tc2 - tc1)/1e6 + "ms")
 
-    assert(df.queryExecution.executedPlan.find(_.isInstanceOf[GandivaProjectExec]).isDefined)
+//        val dfin = spark.read.parquet("/home/jjhoozemans/workspaces/fletcher/datasets/parquet/d500")
+	    val te1 = System.nanoTime()
+//        //val df = dfin.select(max(col("a") + col("b") + col("c"))).first()
+        //val row = spark.sql(s"SELECT `a` + `b` + `c` AS sum FROM parquet.`/home/jjhoozemans/workspaces/fletcher/datasets/parquet/d500`").agg("sum" -> "max").first()
+        val df = dfin.select(col("a") + col("b") + col("c"))
+        val results = df.collect() //collect() is a shitty way to force evaluation, it also copies data!
+	    val te2 = System.nanoTime()
+        
+        totalextimes += (te2 - te1)/1e6
+		lastextime = (te2 - te1)/1e6
+	    //println("Gandiva execution time: " + (te2 - te1)/1e6 + "ms for " + dfin.count + "rows ("+ (dfin.count * 3 * 8 / 1e6) + " Mbytes), " + (dfin.count * 3 * 8 / ((te2 - te1)/1e3)) + "MB/s")
+        println("Gandiva execution time: " + (te2 - te1)/1e6 + "ms")
+    }
 
-    df.take(10).foreach(println(_))
-    println(df.count())
+    val meanextimes = totalextimes / nIters
+    println("Gandiva mean execution time: " + meanextimes)
+//    assert(df.queryExecution.executedPlan.find(_.isInstanceOf[GandivaProjectExec]).isDefined)
+
+//    df.take(10).foreach(println(_))
+//    println(df.count())
   }
 }

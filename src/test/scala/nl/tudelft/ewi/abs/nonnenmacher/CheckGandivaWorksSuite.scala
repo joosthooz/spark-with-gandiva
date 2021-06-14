@@ -22,7 +22,7 @@ class CheckGandivaWorksSuite extends FunSuite {
     ArrowUtils.rootAllocator.newChildAllocator("SparkTest", 0, Long.MaxValue)
   }
 
-  test("that all Gandiva dependencies are set-up correctly and it can execute a projection") {
+  ignore("that all Gandiva dependencies are set-up correctly and it can execute a projection") {
     // In this test basically no code from me is executed and it just checks Gandiva
 
     // arrow field definition of input
